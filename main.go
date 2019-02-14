@@ -100,7 +100,7 @@ func writeStringSource(f *os.File, typeName string, enumNames []string, enumValu
 	f.WriteString("\n\tswitch int(enum) {")
 	for i := 0; i < len(enumNames); i++ {
 		f.WriteString(fmt.Sprintf("\n\tcase %s:", enumNames[i]))
-		f.WriteString(fmt.Sprintf("\n\t\tr = %q", enumNames[i]))
+		f.WriteString(fmt.Sprintf("\n\t\tr = %q", enumValues[i]))
 	}
 	f.WriteString("\n\t}")
 	f.WriteString("\n\treturn r")

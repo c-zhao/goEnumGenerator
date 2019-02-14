@@ -1,0 +1,5 @@
+ OperatorEnum
+ AND
+ ONE
+ OR
+ XOR

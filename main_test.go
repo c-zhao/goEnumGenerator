@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestBuildEnumFromValue(t *testing.T) {
 	type args struct {
@@ -22,6 +24,27 @@ func TestBuildEnumFromValue(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := buildEnumFromValue(tt.args.s); got != tt.want {
 				t.Errorf("buildEnumFromValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_extractPrefix(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{"t1", args{"abcHello"}, "AH"},
+		{"t1", args{"Abc2Hello"}, "AH"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := extractPrefix(tt.args.s); got != tt.want {
+				t.Errorf("extractPrefix() = %v, want %v", got, tt.want)
 			}
 		})
 	}

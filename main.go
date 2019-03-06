@@ -14,6 +14,17 @@ func check(e error) {
 	}
 }
 
+//we assume the enum type name use CamelCase convention but the first letter is upper case
+func extractPrefix(s string) string {
+	var sb strings.Builder
+	for i, r := range s {
+		if i == 0 || unicode.IsUpper(r) {
+			sb.WriteRune(unicode.ToUpper(r))
+		}
+	}
+	return sb.String()
+}
+
 func upcaseFirstLetter(s string) string {
 	if len(s) == 0 {
 		return ""
@@ -71,6 +82,23 @@ func writeTypeSource(f *os.File, typeName string, enumNames []string, enumValues
 	f.Sync()
 }
 
+func writeTypeSourceForString(f *os.File, typeName string, enumNames []string, enumValues []string) {
+	if len(enumNames) != len(enumValues) {
+		return
+	}
+	f.WriteString("package main\n")
+	f.WriteString(fmt.Sprintf("\n//%s Enumeration type", typeName))
+	f.WriteString(fmt.Sprintf("\ntype %s string\n", typeName))
+
+	f.WriteString("\nconst (")
+	for i := 0; i < len(enumNames); i++ {
+		f.WriteString(fmt.Sprintf("\n\t// %s = %q", enumNames[i], enumValues[i]))
+		f.WriteString(fmt.Sprintf("\n\t%s string = %q", enumNames[i], enumValues[i]))
+	}
+	f.WriteString("\n)\n")
+	f.Sync()
+}
+
 func writeConstructorSource(f *os.File, typeName string, enumNames []string, enumValues []string) {
 	if len(enumNames) != len(enumValues) {
 		return
@@ -110,19 +138,33 @@ func writeStringSource(f *os.File, typeName string, enumNames []string, enumValu
 
 func main() {
 	//check command line parameter
-	if len(os.Args) == 1 {
-		fmt.Println("\nusage:\n\tgoEnumGenerator input-file-name")
+	if len(os.Args) < 3 {
+		fmt.Println("\nusage:\n\tgoEnumGenerator input-file-name 0 or 1 (0 for int enum, 1 for string enum)")
 		return
 	}
+
+	if !strings.Contains("01", os.Args[2]) {
+		fmt.Println("we only support two type enums: 0->int 1->string")
+		return
+	}
+
 	//read data into memory
 	fn := os.Args[1]
 	fIn, err := os.Open(fn)
 	check(err)
 	defer fIn.Close()
 
+	enumType := strings.Compare("0", os.Args[2])
+	if enumType == 0 {
+		fmt.Println("Generate enum use int as under type")
+	} else {
+		fmt.Println("Generate enum use string as under type")
+	}
+
 	scanner := bufio.NewScanner(fIn)
 
 	var typeName string
+	var prefix string
 	enumValues := make([]string, 0, 32)
 	enumNames := make([]string, 0, 32)
 	i := 0
@@ -131,10 +173,11 @@ func main() {
 		line = strings.Trim(line, " +,.-~!@#$%^&*();:'")
 		if i == 0 {
 			typeName = line
+			prefix = extractPrefix(typeName)
 			i++
 		} else {
 			enumValues = append(enumValues, line)
-			enumNames = append(enumNames, buildEnumFromValue(line))
+			enumNames = append(enumNames, prefix+buildEnumFromValue(line))
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -146,8 +189,13 @@ func main() {
 	fOut, err := os.Create(fn)
 	check(err)
 	defer fOut.Close()
-	writeTypeSource(fOut, typeName, enumNames, enumValues)
-	writeConstructorSource(fOut, typeName, enumNames, enumValues)
-	writeStringSource(fOut, typeName, enumNames, enumValues)
+	if enumType == 0 {
+		writeTypeSource(fOut, typeName, enumNames, enumValues)
+		writeConstructorSource(fOut, typeName, enumNames, enumValues)
+		writeStringSource(fOut, typeName, enumNames, enumValues)
+	} else {
+		writeTypeSourceForString(fOut, typeName, enumNames, enumValues)
+	}
+
 	fOut.Sync()
 }

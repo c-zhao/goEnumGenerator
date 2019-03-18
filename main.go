@@ -93,7 +93,7 @@ func writeTypeSourceForString(f *os.File, typeName string, enumNames []string, e
 	f.WriteString("\nconst (")
 	for i := 0; i < len(enumNames); i++ {
 		f.WriteString(fmt.Sprintf("\n\t// %s = %q", enumNames[i], enumValues[i]))
-		f.WriteString(fmt.Sprintf("\n\t%s string = %q", enumNames[i], enumValues[i]))
+		f.WriteString(fmt.Sprintf("\n\t%s %s = %q", enumNames[i], typeName, enumValues[i]))
 	}
 	f.WriteString("\n)\n")
 	f.Sync()
